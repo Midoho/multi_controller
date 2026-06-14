@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<title>2-Link Robot Controller</title>
+<meta charset="utf-8" />
+<style>
+  body { font-family: sans-serif; background-color: #f4f4f9; margin: 0; padding: 20px; color: #333; }
+  h1 { text-align: center; color: #4CAF50; }
+  
+  #main-container { display: flex; gap: 30px; max-width: 1400px; margin: 0 auto; align-items: flex-start; }
+  #control-panel { flex: 1.2; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+  #graph-panel { flex: 1.5; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+  .box2 { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+  
+  .ik-mode-selector { background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #c8e6c9; }
+  .ik-mode-selector label { margin-right: 15px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; }
+  .ik-mode-selector input[type="radio"] { margin-right: 5px; transform: scale(1.2); }
+  
+  .switch-btn { margin-left: 10px; padding: 8px 16px; background-color: #008CBA; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: background 0.2s; }
+  .switch-btn:hover { background-color: #007399; }
+  .active-mode-status { display: block; margin-top: 10px; padding: 8px; background: #fff; border-left: 4px solid #F44336; font-size: 14px; font-weight: bold; color: #d32f2f; }
+
+  .tabs { display: flex; margin-bottom: 15px; flex-wrap: wrap; }
+  .tab-btn { flex: 1; padding: 10px; cursor: pointer; background: #ddd; border: none; font-size: 13px; margin-right: 2px; min-width: 100px; margin-bottom: 2px; }
+  .tab-btn.active { background: #4CAF50; color: white; font-weight: bold; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  
+  input[type="number"] { font-size: 16px; padding: 5px; width: 80px; }
+  textarea { font-size: 14px; padding: 10px; width: 100%; box-sizing: border-box; font-family: monospace; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; line-height: 1.4;}
+  canvas { background-color: #fafafa; border: 2px solid #ccc; width: 100%; border-radius: 4px; }
+  
+  .formula-help { font-size: 13px; color: #666; background: #f0f0f0; padding: 10px; border-radius: 4px; margin-bottom: 10px;}
+  .math-badge { background: #e0e0e0; padding: 2px 5px; border-radius: 3px; font-family: monospace; font-size: 12px; margin-right: 3px;}
+  
+  #ikResultArea { margin-top: 20px; padding: 15px; background: #f0f4f8; border: 2px solid #b0bec5; border-radius: 6px; display: none; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+  .result-box { display: flex; justify-content: space-between; margin-top: 10px; font-size: 15px; }
+  .result-col { flex: 1; background: #fff; padding: 10px; border-radius: 4px; border: 1px solid #cfd8dc; margin: 0 5px; }
+</style>
+</head>
+<body spellcheck="false">
+
+<h1>2-Link Arm Controller</h1>
+
+<div id="main-container">
+  <div id="control-panel">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <button id="connect" style="padding: 12px 24px; background:#4CAF50; color:white; border:none; border-radius:5px; font-size:16px; cursor:pointer;">
+        Arduinoに接続
+      </button>
+      <button id="disconnect" style="display: none; padding: 12px 24px; background:#F44336; color:white; border:none; border-radius:5px; font-size:16px; cursor:pointer;">
+        デバイスから切断
+      </button>
+    </div>
+
+    <div class="ik-mode-selector" id="ikModeSelector" style="display: none;">
+      <div style="margin-bottom: 8px; color: #2e7d32; font-size: 14px;"><strong>🤖 使用する逆運動学の計算式:</strong></div>
+      <div style="display: flex; align-items: center;">
+        <label>
+          <input type="radio" name="ikMode" value="teacher" checked> 先生の式
+        </label>
+        <label>
+          <input type="radio" name="ikMode" value="custom"> 自分で入力した式
+        </label>
+        <button id="applyModeBtn" class="switch-btn">切り替え</button>
+      </div>
+      <div class="active-mode-status" id="currentModeDisplay">
+        現在適用中: 【 先生の式 】
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-ik')">逆運動学 (式入力)</button>
+      <button class="tab-btn" onclick="switchTab('tab-manual')">手動移動</button>
+      <button class="tab-btn" onclick="switchTab('tab-turtle')">移動コマンド</button>
+      <button class="tab-btn" onclick="switchTab('tab-function')">数式軌跡 (関数)</button>
+      <button class="tab-btn" onclick="switchTab('tab-absolute')">絶対座標</button>
+    </div>
+
+    <div id="tab-ik" class="tab-content active">
+      <h3>逆運動学とモータ指令値の計算</h3>
+      
+      <div class="box2">
+        <strong>目標座標とリンク長:</strong><br><br>
+        X: <input type="number" id="ikTargetX" value="0"> mm &nbsp;
+        Y: <input type="number" id="ikTargetY" value="150"> mm<br><br>
+        L1: <input type="number" id="ikTargetL1" value="120"> mm &nbsp;
+        L2: <input type="number" id="ikTargetL2" value="120"> mm
+      </div>
+
+      <div class="box2">
+        <strong>指令値計算コード:</strong><br>
+        <div class="formula-help">
+          <p style="margin:0 0 5px 0;"><strong>利用可能な関数 (角度はすべて「度(デグリー)」で計算されます):</strong><br>
+            <span class="math-badge">Sin()</span> <span class="math-badge">Cos()</span> <span class="math-badge">Acos()</span> <span class="math-badge">Atan(y,x)</span> <span class="math-badge">Sqrt()</span>
+          </p>
+        </div>
+        <textarea id="ikScript" rows="18">// 変数定義
+let theta1;
+let theta2;
+let cmd1;
+let cmd2;
+
+// 1. エルボー関節 (θ2) の計算 [単位: 度]
+theta2 = 180 - Acos((L1*L1 + L2*L2 - X*X - Y*Y) / (2 * L1 * L2));
+
+// 2. ベース関節 (θ1) の計算 [単位: 度]
+theta1 = Atan(Y, X) - Acos((L1*L1 + X*X + Y*Y - L2*L2) / (2 * L1 * Sqrt(X*X + Y*Y)));
+
+// 3. モータへの指令値 (0〜4095) の計算
+cmd1 = theta1 * (4096 / 360) + 2048;
+cmd2 = theta2 * (4096 / 360) + 2048;
+
+// 計算結果をオブジェクトとして返す
+return {
+  theta1: theta1,
+  theta2: theta2,
+  val1: cmd1,
+  val2: cmd2
+};</textarea>
+      </div>
+
+      <button id="runIkBtn" style="padding: 12px; background:#9C27B0; color:white; border:none; border-radius:5px; cursor:pointer; width: 100%; font-size: 16px; font-weight: bold;">
+        数式を評価してテスト計算
+      </button>
+      
+      <div id="ikResultArea">
+        <h4 style="margin: 0; color: #37474f; text-align: center;">📊 テスト計算結果パネル</h4>
+        <div class="result-box">
+          <div class="result-col">
+            <strong style="color: #555;">角度指令値 (度)</strong><br>
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">
+            θ1: <span id="resTh1" style="font-weight:bold; color:#1976D2;">0.0</span> °<br>
+            θ2: <span id="resTh2" style="font-weight:bold; color:#1976D2;">0.0</span> °
+          </div>
+          <div class="result-col">
+            <strong style="color: #555;">モータ指令値 (0〜4095)</strong><br>
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">
+            Val1: <span id="resVal1" style="font-weight:bold; color:#E64A19;">2048</span><br>
+            Val2: <span id="resVal2" style="font-weight:bold; color:#E64A19;">2048</span>
+          </div>
+        </div>
+        
+        <button id="confirmIkBtn" style="margin-top: 15px; padding: 12px; background:#4CAF50; color:white; border:none; border-radius:5px; cursor:pointer; width: 100%; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">
+          💾 逆運動学の計算式を確定して移動
+        </button>
+      </div>
+    </div>
+
+    <div id="tab-manual" class="tab-content">
+      <h3>手動移動モード</h3>
+      <p style="font-size: 14px; color: #555; line-height: 1.5;">
+        右側の「ロボット軌跡ビューア」に表示されているアームの先端（<strong style="color:#9C27B0;">紫色の丸マーカー</strong>）をマウスで掴んでドラッグしてください。
+      </p>
+      <div style="padding: 15px; background: #e3f2fd; border: 1px solid #90caf9; border-radius: 6px; font-size: 14px; color: #0d47a1; line-height: 1.4;">
+        <strong>💡 同調運用のルール:</strong><br>
+        このタブが開かれているときだけ、画面上でのドラッグ操作が有効になり、実際のロボットモータへ連続して指令が送信されます。<br>
+      </div>
+    </div>
+
+    <div id="tab-turtle" class="tab-content">
+      <h3>移動コマンド入力</h3>
+       <p style="font-size: 14px; color: #666; line-height: 1.5;">       
+        <strong>F</strong>50: 前に50進む(mm) &nbsp; <strong>R</strong>90: 右に90度曲がる &nbsp; <strong>L</strong>90: 左に90度曲がる<br>
+        <strong style="color:#2196F3;">【繰り返し文】</strong> <strong>LOOP</strong> 回数 〜 <strong>END</strong> で囲むと反復します。<br>
+        ※水色の円の外には出られません。
+      </p>
+      <textarea id="turtleInput" rows="7">LOOP 4
+F50
+R90
+END</textarea>
+      <button id="runTurtleBtn" style="margin-top: 10px; padding: 10px; background:#2196F3; color:white; border:none; border-radius:5px; cursor:pointer; width: 100%; font-size: 15px; font-weight:bold;">実行</button>
+    </div>
+
+    <div id="tab-function" class="tab-content">
+      <h3>数式軌跡モード (パラメータ曲線)</h3>
+      <p style="font-size: 14px; color: #555; line-height: 1.5;">
+        変数 <code>t</code> を連続的に変化させて目標座標 (X, Y) を計算します。<br>
+        サイン波を重畳させた円運動などが楽しめます！
+      </p>
+      <div class="box2" style="background: #fff3e0; padding: 10px; border-radius: 5px; border: 1px solid #ffe0b2;">
+        <strong>t の範囲: </strong>
+        <input type="number" id="funcTStart" value="0" style="width: 60px;"> から
+        <input type="number" id="funcTEnd" value="360" style="width: 60px;"> まで
+        <br><br>
+        <strong>ステップ (変化量): </strong>
+        <input type="number" id="funcTStep" value="4" style="width: 60px;">
+      </div>
+      <div class="formula-help">
+        <p style="margin:0 0 5px 0;"><strong>利用可能な関数:</strong> <span class="math-badge">Sin()</span> <span class="math-badge">Cos()</span> <span class="math-badge">Sqrt()</span> など</p>
+      </div>
+      <textarea id="funcScript" rows="7">
+// サイン波をまとった円運動 (波打つ花びらの軌跡)
+let r = 80 + 20 * Sin(t * 6); 
+
+let x = r * Cos(t);
+let y = 150 + r * Sin(t);
+
+return { x: x, y: y };</textarea>
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button id="runFuncBtn" style="padding: 10px; background:#E91E63; color:white; border:none; border-radius:5px; cursor:pointer; flex: 1.5; font-size: 16px; font-weight:bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+          ▶ 軌跡を描画
+        </button>
+        <button id="stopFuncBtn" style="padding: 10px; background:#757575; color:white; border:none; border-radius:5px; cursor:pointer; flex: 1; font-size: 16px; font-weight:bold;" disabled>
+          ■ 停止
+        </button>
+      </div>
+    </div>
+
+    <div id="tab-absolute" class="tab-content">
+      <h3>絶対座標モード (自動IK)</h3>
+      <div class="box2">
+        X: <input type="number" id="targetX" value="0"> mm <br><br>
+        Y: <input type="number" id="targetY" value="150"> mm <br>
+      </div>
+      <button id="runAbsoluteBtn" style="padding: 10px; background:#FF9800; color:white; border:none; border-radius:5px; cursor:pointer; width: 100%;">移動</button>
+    </div>
+  </div>
+
+  <div id="graph-panel">
+    <h2 style="margin-top: 0; margin-bottom: 10px;">ロボット軌跡ビューア</h2>
+    <div style="font-size: 14px; margin-bottom: 10px; color: #555;">現在の角度: θ1=<span id="curTh1">90.0</span>度, θ2=<span id="curTh2">0.0</span>度</div>
+    <canvas id="robotCanvas" width="600" height="600"></canvas>
+  </div>
+</div>
+
+<script>
+  let activeTabId = 'tab-ik';
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    
+    if (event && event.target && event.target.tagName === 'BUTTON') {
+      event.target.classList.add('active');
+    }
+    activeTabId = tabId;
+
+    const modeSelector = document.getElementById('ikModeSelector');
+    if (tabId === 'tab-ik') {
+      modeSelector.style.display = 'none';
+    } else {
+      modeSelector.style.display = 'block';
+    }
+  }
+
+  let activeIkMode = 'teacher';
+  let savedIkScript = document.getElementById('ikScript').value; 
+
+  document.getElementById('applyModeBtn').addEventListener('click', () => {
+    const selectedMode = document.querySelector('input[name="ikMode"]:checked').value;
+    activeIkMode = selectedMode; 
+    
+    const displayElement = document.getElementById('currentModeDisplay');
+    if (activeIkMode === 'teacher') {
+      displayElement.innerText = '現在適用中: 【 先生の式 】';
+      displayElement.style.borderLeftColor = '#F44336';
+      displayElement.style.color = '#d32f2f';
+    } else {
+      displayElement.innerText = '現在適用中: 【 自分で入力した式 】';
+      displayElement.style.borderLeftColor = '#9C27B0';
+      displayElement.style.color = '#7b1fa2';
+    }
+    alert(displayElement.innerText + " に切り替えました！");
+  });
+
+  const canvas = document.getElementById('robotCanvas');
+  const ctx = canvas.getContext('2d');
+  
+  const ZOOM = 1.1; 
+  const originX = canvas.width / 2;
+  const originY = canvas.height / 2;
+  const scaleX = (x) => originX + (x * ZOOM);
+  const scaleY = (y) => originY - (y * ZOOM);
+
+  let L1 = 120.0;
+  let L2 = 120.0;
+  let MAX_REACH = L1 + L2;
+
+  let robX = 0.0;
+  let robY = 150.0;
+  let robAngle = 90.0;
+  let angle1_deg = 90.0;
+  let angle2_deg = 0.0;
+
+  function clampToCircle(x, y) {
+    let r = Math.sqrt(x*x + y*y);
+    if (r > MAX_REACH - 1.0) {
+      return { x: x * (MAX_REACH - 1.0) / r, y: y * (MAX_REACH - 1.0) / r };
+    }
+    return { x: x, y: y };
+  }
+
+  function drawEnvironment() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = "rgba(173, 216, 230, 0.2)";
+    ctx.beginPath(); ctx.arc(originX, originY, MAX_REACH * ZOOM, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#81D4FA"; ctx.setLineDash([5, 5]); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); 
+
+    ctx.font = "12px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    for (let i = -250; i <= 250; i += 50) {
+      let px = scaleX(i);
+      ctx.beginPath(); ctx.strokeStyle = (i === 0) ? "#555" : "#eee"; ctx.lineWidth = (i === 0) ? 2 : 1;
+      ctx.moveTo(px, 0); ctx.lineTo(px, canvas.height); ctx.stroke();
+      if (i !== 0 && i % 100 === 0) { ctx.fillStyle = "#888"; ctx.fillText(i, px, originY + 15); }
+    }
+    for (let i = -250; i <= 250; i += 50) {
+      let py = scaleY(i);
+      ctx.beginPath(); ctx.strokeStyle = (i === 0) ? "#555" : "#eee"; ctx.lineWidth = (i === 0) ? 2 : 1;
+      ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke();
+      if (i !== 0 && i % 100 === 0) { ctx.fillStyle = "#888"; ctx.textAlign = "right"; ctx.fillText(i, originX - 8, py); }
+    }
+    ctx.fillStyle = "#333"; ctx.textAlign = "right"; ctx.fillText("0", originX - 8, originY + 15);
+
+    ctx.fillStyle = "#222";
+    ctx.font = "bold 15px sans-serif";
+    
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
+    ctx.fillText("X", canvas.width - 15, originY - 10);
+    
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Y", originX + 12, 15);
+  }
+
+  // 軌跡を残すための配列
+  let trajectoryPath = [];
+
+  function updateViewFK() {
+    document.getElementById('curTh1').innerText = angle1_deg.toFixed(1);
+    document.getElementById('curTh2').innerText = angle2_deg.toFixed(1);
+
+    drawEnvironment();
+
+    let rad1 = angle1_deg * Math.PI / 180.0;
+    let rad2 = angle2_deg * Math.PI / 180.0;
+
+    let jointX = L1 * Math.cos(rad1);
+    let jointY = L1 * Math.sin(rad1);
+    let endX = jointX + L2 * Math.cos(rad1 + rad2);
+    let endY = jointY + L2 * Math.sin(rad1 + rad2);
+
+    // 過去の軌跡を描画する (直近200点まで)
+    if (trajectoryPath.length > 0) {
+      ctx.strokeStyle = "rgba(233, 30, 99, 0.5)"; // 薄いピンク色
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(scaleX(trajectoryPath[0].x), scaleY(trajectoryPath[0].y));
+      for (let i = 1; i < trajectoryPath.length; i++) {
+        ctx.lineTo(scaleX(trajectoryPath[i].x), scaleY(trajectoryPath[i].y));
+      }
+      ctx.stroke();
+    }
+
+    ctx.strokeStyle = "#424242"; ctx.lineWidth = 12; ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(scaleX(0), scaleY(0));
+    ctx.lineTo(scaleX(jointX), scaleY(jointY));
+    ctx.lineTo(scaleX(endX), scaleY(endY));
+    ctx.stroke();
+
+    ctx.fillStyle = "#212121"; ctx.beginPath(); ctx.arc(scaleX(0), scaleY(0), 10, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#FBC02D"; ctx.beginPath(); ctx.arc(scaleX(jointX), scaleY(jointY), 8, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#9C27B0"; ctx.beginPath(); ctx.arc(scaleX(endX), scaleY(endY), 6, 0, Math.PI*2); ctx.fill();
+  }
+  
+  updateViewFK();
+
+  function calculateIK(x, y) {
+    if (activeIkMode === 'teacher') {
+      let cosT2 = (x*x + y*y - L1*L1 - L2*L2) / (2 * L1 * L2);
+      cosT2 = Math.max(-1, Math.min(1, cosT2));
+      let th2_rad = Math.acos(cosT2);
+      let th1_rad = Math.atan2(y, x) - Math.atan2(L2 * Math.sin(th2_rad), L1 + L2 * cosT2);
+      
+      return {
+        theta1: th1_rad * 180.0 / Math.PI,
+        theta2: th2_rad * 180.0 / Math.PI
+      };
+    } else {
+      let scriptStr = savedIkScript; 
+      const mathHelper = `
+        const D2R = Math.PI / 180.0;
+        const R2D = 180.0 / Math.PI;
+        const Sin = (deg) => Math.sin(deg * D2R);
+        const Cos = (deg) => Math.cos(deg * D2R);
+        const Acos = (val) => Math.acos(val) * R2D;
+        const Atan = (y, x) => Math.atan2(y, x) * R2D;
+        const Sqrt = Math.sqrt;
+      `;
+      try {
+        let calcFunc = new Function('X', 'Y', 'L1', 'L2', mathHelper + scriptStr);
+        let res = calcFunc(x, y, L1, L2);
+        
+        if (!res || typeof res.theta1 === 'undefined' || typeof res.theta2 === 'undefined') {
+          throw new Error("フォーマット不正");
+        }
+        if (isNaN(res.theta1) || isNaN(res.theta2)) {
+          throw new Error("NaN発生");
+        }
+        return { theta1: res.theta1, theta2: res.theta2 };
+        
+      } catch (e) {
+        console.warn("自分で入力した式の実行エラー:", e.message);
+        return { theta1: angle1_deg, theta2: angle2_deg }; 
+      }
+    }
+  }
+
+  let port, writer, reader, keepReading = false;
+  
+  async function readLoop() {
+    while (port.readable && keepReading) {
+      const textDecoder = new TextDecoderStream();
+      const closedPromise = port.readable.pipeTo(textDecoder.writable);
+      reader = textDecoder.readable.getReader();
+      try { while (true) { const { value, done } = await reader.read(); if (done) break; } } 
+      catch (error) {} finally { reader.releaseLock(); }
+    }
+  }
+
+  document.getElementById('connect').addEventListener('click', async () => {
+    try {
+      port = await navigator.serial.requestPort(); await port.open({ baudRate: 9600 });
+      writer = port.writable.getWriter();
+      document.getElementById('connect').style.display = 'none';
+      document.getElementById('disconnect').style.display = 'inline-block';
+      keepReading = true; readLoop();
+    } catch (err) { alert("接続エラー"); }
+  });
+
+  document.getElementById('disconnect').addEventListener('click', async () => {
+    keepReading = false;
+    if (reader) { await reader.cancel(); reader = null; }
+    if (writer) { writer.releaseLock(); writer = null; }
+    if (port) { await port.close(); port = null; }
+    document.getElementById('connect').style.display = 'inline-block';
+    document.getElementById('disconnect').style.display = 'none';
+  });
+
+  async function sendCommandAngle(a1, a2) {
+    if (!writer) return;
+    const cmd = `A,${a1.toFixed(2)},${a2.toFixed(2)}\n`;
+    await writer.write(new TextEncoder().encode(cmd));
+  }
+
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  document.getElementById('runIkBtn').addEventListener('click', async () => {
+    let x = parseFloat(document.getElementById('ikTargetX').value);
+    let y = parseFloat(document.getElementById('ikTargetY').value);
+    let l1_val = parseFloat(document.getElementById('ikTargetL1').value);
+    let l2_val = parseFloat(document.getElementById('ikTargetL2').value);
+    let scriptStr = document.getElementById('ikScript').value;
+    let resultArea = document.getElementById('ikResultArea');
+
+    try {
+      const mathHelper = `
+        const D2R = Math.PI / 180.0;
+        const R2D = 180.0 / Math.PI;
+        const Sin = (deg) => Math.sin(deg * D2R);
+        const Cos = (deg) => Math.cos(deg * D2R);
+        const Acos = (val) => Math.acos(val) * R2D;
+        const Atan = (y, x) => Math.atan2(y, x) * R2D;
+        const Sqrt = Math.sqrt;
+      `;
+
+      let calcFunc = new Function('X', 'Y', 'L1', 'L2', mathHelper + scriptStr);
+      let res = calcFunc(x, y, l1_val, l2_val);
+
+      if (!res || typeof res.theta1 === 'undefined' || typeof res.theta2 === 'undefined' || typeof res.val1 === 'undefined' || typeof res.val2 === 'undefined') {
+        throw new Error("return { theta1: ..., theta2: ..., val1: ..., val2: ... }; の形式で値を返してください。");
+      }
+      if(isNaN(res.theta1) || isNaN(res.theta2)) {
+        throw new Error("計算結果が非数(NaN)になりました。数式を確認してください。");
+      }
+
+      L1 = l1_val;
+      L2 = l2_val;
+      MAX_REACH = L1 + L2;
+
+      angle1_deg = res.theta1;
+      angle2_deg = res.theta2;
+
+      document.getElementById('resTh1').innerText = res.theta1.toFixed(2);
+      document.getElementById('resTh2').innerText = res.theta2.toFixed(2);
+      document.getElementById('resVal1').innerText = Math.round(res.val1);
+      document.getElementById('resVal2').innerText = Math.round(res.val2);
+      
+      resultArea.style.display = 'block'; 
+      updateViewFK(); 
+
+    } catch (e) {
+      alert("エラー: " + e.message);
+    }
+  });
+
+  document.getElementById('confirmIkBtn').addEventListener('click', async () => {
+    let x = parseFloat(document.getElementById('ikTargetX').value);
+    let y = parseFloat(document.getElementById('ikTargetY').value);
+    let l1_val = parseFloat(document.getElementById('ikTargetL1').value);
+    let l2_val = parseFloat(document.getElementById('ikTargetL2').value);
+    let scriptStr = document.getElementById('ikScript').value;
+    let resultArea = document.getElementById('ikResultArea');
+
+    try {
+      const mathHelper = `
+        const D2R = Math.PI / 180.0;
+        const R2D = 180.0 / Math.PI;
+        const Sin = (deg) => Math.sin(deg * D2R);
+        const Cos = (deg) => Math.cos(deg * D2R);
+        const Acos = (val) => Math.acos(val) * R2D;
+        const Atan = (y, x) => Math.atan2(y, x) * R2D;
+        const Sqrt = Math.sqrt;
+      `;
+
+      let calcFunc = new Function('X', 'Y', 'L1', 'L2', mathHelper + scriptStr);
+      let res = calcFunc(x, y, l1_val, l2_val);
+
+      if (!res || typeof res.theta1 === 'undefined' || typeof res.theta2 === 'undefined') {
+        throw new Error("return { theta1: ..., theta2: ... }; の形式で値を返してください。");
+      }
+      if (isNaN(res.theta1) || isNaN(res.theta2)) {
+        throw new Error("計算結果が非数(NaN)になりました。数式を確認してください。");
+      }
+
+      savedIkScript = scriptStr;
+      activeIkMode = 'custom';
+      document.querySelector('input[name="ikMode"][value="custom"]').checked = true;
+      const displayElement = document.getElementById('currentModeDisplay');
+      displayElement.innerText = '現在適用中: 【 自分で入力した式 】';
+      displayElement.style.borderLeftColor = '#9C27B0';
+      displayElement.style.color = '#7b1fa2';
+
+      L1 = l1_val;
+      L2 = l2_val;
+      MAX_REACH = L1 + L2;
+      angle1_deg = res.theta1;
+      angle2_deg = res.theta2;
+
+      document.getElementById('resTh1').innerText = res.theta1.toFixed(2);
+      document.getElementById('resTh2').innerText = res.theta2.toFixed(2);
+      if(typeof res.val1 !== 'undefined') document.getElementById('resVal1').innerText = Math.round(res.val1);
+      if(typeof res.val2 !== 'undefined') document.getElementById('resVal2').innerText = Math.round(res.val2);
+      resultArea.style.display = 'block'; 
+      trajectoryPath = []; // 軌跡をリセット
+      updateViewFK(); 
+
+      if (writer) {
+        await sendCommandAngle(angle1_deg, angle2_deg);
+        alert("独自の計算式を確定し、ロボットを目標座標へ移動させました！");
+      } else {
+        alert("独自の計算式を確定しました！（※Arduino未接続のため画面上のみ移動しました）");
+      }
+
+    } catch (e) {
+      alert("エラー: 確定する前に数式を確認してください。\n" + e.message);
+    }
+  });
+
+  let isDragging = false;
+  let lastSentTime = 0;
+
+  function getRobotCoordsFromMouse(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
+    return {
+      x: (mouseX - originX) / ZOOM,
+      y: (originY - mouseY) / ZOOM
+    };
+  }
+
+  canvas.addEventListener('mousedown', (e) => {
+    if (activeTabId !== 'tab-manual') return; 
+
+    let rad1 = angle1_deg * Math.PI / 180.0;
+    let rad2 = angle2_deg * Math.PI / 180.0;
+    let endX = L1 * Math.cos(rad1) + L2 * Math.cos(rad1 + rad2);
+    let endY = L1 * Math.sin(rad1) + L2 * Math.sin(rad1 + rad2);
+
+    const mouseCoord = getRobotCoordsFromMouse(e);
+    const dist = Math.sqrt((mouseCoord.x - endX)**2 + (mouseCoord.y - endY)**2);
+
+    if (dist < 25) {
+      isDragging = true;
+      trajectoryPath = []; // 手動移動開始時に軌跡リセット
+      canvas.style.cursor = 'grabbing';
+    }
+  });
+
+  canvas.addEventListener('mousemove', async (e) => {
+    if (activeTabId !== 'tab-manual') return;
+
+    if (!isDragging) {
+      let rad1 = angle1_deg * Math.PI / 180.0;
+      let rad2 = angle2_deg * Math.PI / 180.0;
+      let endX = L1 * Math.cos(rad1) + L2 * Math.cos(rad1 + rad2);
+      let endY = L1 * Math.sin(rad1) + L2 * Math.sin(rad1 + rad2);
+      const mouseCoord = getRobotCoordsFromMouse(e);
+      const dist = Math.sqrt((mouseCoord.x - endX)**2 + (mouseCoord.y - endY)**2);
+      canvas.style.cursor = (dist < 25) ? 'grab' : 'default';
+      return;
+    }
+
+    const mouseCoord = getRobotCoordsFromMouse(e);
+    let clamped = clampToCircle(mouseCoord.x, mouseCoord.y);
+
+    let angles = calculateIK(clamped.x, clamped.y);
+    angle1_deg = angles.theta1;
+    angle2_deg = angles.theta2;
+    
+    robX = clamped.x;
+    robY = clamped.y;
+
+    updateViewFK();
+
+    const now = Date.now();
+    if (now - lastSentTime > 50) {
+      await sendCommandAngle(angle1_deg, angle2_deg);
+      lastSentTime = now;
+    }
+  });
+
+  window.addEventListener('mouseup', async () => {
+    if (isDragging) {
+      isDragging = false;
+      canvas.style.cursor = 'default';
+      await sendCommandAngle(angle1_deg, angle2_deg);
+    }
+  });
+
+  function unrollCommands(lines) {
+    let unrolled = [];
+    let i = 0;
+    while (i < lines.length) {
+      let line = lines[i].trim().toUpperCase();
+      if (line.length === 0) { i++; continue; }
+
+      if (line.startsWith('LOOP')) {
+        let parts = line.split(/[ ,]+/);
+        let count = parseInt(parts[1]);
+        if (isNaN(count)) count = 1;
+
+        let loopBody = [];
+        let loopDepth = 1;
+        let j = i + 1;
+        while (j < lines.length) {
+          let innerLine = lines[j].trim().toUpperCase();
+          if (innerLine.startsWith('LOOP')) {
+            loopDepth++;
+          } else if (innerLine === 'END') {
+            loopDepth--;
+            if (loopDepth === 0) break;
+          }
+          loopBody.push(lines[j]);
+          j++;
+        }
+        
+        if (j >= lines.length && loopDepth > 0) {
+          throw new Error("LOOPに対応するENDが見つかりません。");
+        }
+
+        let unrolledBody = unrollCommands(loopBody); 
+        for (let c = 0; c < count; c++) {
+          unrolled.push(...unrolledBody);
+        }
+        i = j + 1;
+      } else {
+        unrolled.push(line);
+        i++;
+      }
+    }
+    return unrolled;
+  }
+
+  document.getElementById('runTurtleBtn').addEventListener('click', async (e) => {
+    if (!writer) return alert("Arduinoが接続されていません");
+    const btn = e.target;
+    const text = document.getElementById('turtleInput').value;
+    const lines = text.split('\n');
+
+    btn.disabled = true; btn.style.background = "#ccc"; btn.innerText = "実行中...";
+    trajectoryPath = []; // 実行前に軌跡リセット
+
+    try {
+      const flatCommands = unrollCommands(lines);
+
+      for (let line of flatCommands) {
+        if (line.length === 0) continue;
+        let val = parseFloat(line.substring(1));
+        if (isNaN(val)) continue;
+
+        if (line.startsWith('F')) {
+          // 移動を少しずつ細分化してアニメーションさせる
+          let startX = robX;
+          let startY = robY;
+          let targetX = robX + val * Math.cos(robAngle * Math.PI / 180);
+          let targetY = robY + val * Math.sin(robAngle * Math.PI / 180);
+          let clampedTarget = clampToCircle(targetX, targetY);
+          
+          let steps = Math.ceil(val / 5.0); // 5mm刻みで移動
+          if(steps < 1) steps = 1;
+
+          for(let s = 1; s <= steps; s++) {
+            let px = startX + (clampedTarget.x - startX) * (s / steps);
+            let py = startY + (clampedTarget.y - startY) * (s / steps);
+            
+            robX = px;
+            robY = py;
+            
+            let angles = calculateIK(robX, robY);
+            angle1_deg = angles.theta1;
+            angle2_deg = angles.theta2;
+
+            trajectoryPath.push({x: robX, y: robY});
+            if (trajectoryPath.length > 300) trajectoryPath.shift();
+
+            updateViewFK();
+            await sendCommandAngle(angle1_deg, angle2_deg);
+            await sleep(50); // 速度調整
+          }
+        } 
+        else if (line.startsWith('R')) {
+          robAngle -= val;
+        } 
+        else if (line.startsWith('L')) {
+          robAngle += val;
+        }
+      }
+    } catch (err) {
+      alert("コマンドの解釈エラー: " + err.message);
+    }
+    
+    btn.disabled = false; btn.style.background = "#2196F3"; btn.innerText = "実行";
+  });
+
+  document.getElementById('runAbsoluteBtn').addEventListener('click', async () => {
+    let tx = parseFloat(document.getElementById('targetX').value);
+    let ty = parseFloat(document.getElementById('targetY').value);
+    
+    let clamped = clampToCircle(tx, ty);
+    robX = clamped.x; 
+    robY = clamped.y;
+    
+    let angles = calculateIK(robX, robY);
+    angle1_deg = angles.theta1;
+    angle2_deg = angles.theta2;
+
+    trajectoryPath = []; // 軌跡リセット
+    updateViewFK();
+    await sendCommandAngle(angle1_deg, angle2_deg);
+  });
+
+  // --- 【新規追加】関数軌跡の実行ロジック ---
+  let isFuncRunning = false;
+
+  document.getElementById('runFuncBtn').addEventListener('click', async () => {
+    if (!writer) return alert("Arduinoが接続されていません。画面上のシミュレーションのみ実行します。");
+    
+    isFuncRunning = true;
+    document.getElementById('runFuncBtn').disabled = true;
+    document.getElementById('runFuncBtn').style.background = "#ccc";
+    document.getElementById('stopFuncBtn').disabled = false;
+    document.getElementById('stopFuncBtn').style.background = "#F44336";
+
+    trajectoryPath = []; // 軌跡リセット
+
+    let tStart = parseFloat(document.getElementById('funcTStart').value);
+    let tEnd = parseFloat(document.getElementById('funcTEnd').value);
+    let tStep = parseFloat(document.getElementById('funcTStep').value);
+    let scriptStr = document.getElementById('funcScript').value;
+
+    const mathHelper = `
+      const D2R = Math.PI / 180.0;
+      const R2D = 180.0 / Math.PI;
+      const Sin = (deg) => Math.sin(deg * D2R);
+      const Cos = (deg) => Math.cos(deg * D2R);
+      const Acos = (val) => Math.acos(val) * R2D;
+      const Atan = (y, x) => Math.atan2(y, x) * R2D;
+      const Sqrt = Math.sqrt;
+    `;
+
+    try {
+      let calcFunc = new Function('t', mathHelper + scriptStr);
+
+      for (let t = tStart; t <= tEnd; t += tStep) {
+        if (!isFuncRunning) break; // 停止ボタンが押されたら抜ける
+
+        let res = calcFunc(t);
+        if (!res || typeof res.x === 'undefined' || typeof res.y === 'undefined') {
+          throw new Error("return { x: ..., y: ... }; の形式で値を返してください。");
+        }
+
+        let clamped = clampToCircle(res.x, res.y);
+        robX = clamped.x;
+        robY = clamped.y;
+
+        let angles = calculateIK(robX, robY);
+        angle1_deg = angles.theta1;
+        angle2_deg = angles.theta2;
+
+        trajectoryPath.push({x: robX, y: robY});
+        if (trajectoryPath.length > 500) trajectoryPath.shift();
+
+        updateViewFK();
+        if (writer) {
+          await sendCommandAngle(angle1_deg, angle2_deg);
+        }
+        await sleep(50); // 送信ウェイト（速度調整）
+      }
+    } catch (e) {
+      alert("数式エラー: " + e.message);
+    }
+
+    isFuncRunning = false;
+    document.getElementById('runFuncBtn').disabled = false;
+    document.getElementById('runFuncBtn').style.background = "#E91E63";
+    document.getElementById('stopFuncBtn').disabled = true;
+    document.getElementById('stopFuncBtn').style.background = "#757575";
+  });
+
+  document.getElementById('stopFuncBtn').addEventListener('click', () => {
+    isFuncRunning = false;
+  });
+
+</script>
+</body>
+</html>
