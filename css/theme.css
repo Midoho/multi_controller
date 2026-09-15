@@ -1,0 +1,53 @@
+@charset "utf-8";
+
+
+/*Google Fontsの読み込み
+---------------------------------------------------------------------------*/
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@100;300;400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Ballet:opsz@16..72&display=swap');
+
+
+/*Font Awesomeの読み込み
+---------------------------------------------------------------------------*/
+@import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css");
+
+
+/*CSSカスタムプロパティ（サイト全体を一括管理する為の設定）
+---------------------------------------------------------------------------*/
+:root {
+
+	--bg-color: #fff;					/*主にテンプレートの背景色*/
+	--bg-border-color: rgba(0,0,0,0.3);	/*枠線の色。0,0,0は黒の事で0.3は色が30%出た状態。*/
+	--bg-inverse-color: #333;			/*上のカラーの「対」として使う色*/
+	--bg-inverse-border-color: rgba(255,255,255,0.5);	/*枠線の色。255,255,255,0.5は白の事で0.5は色が50%出た状態。*/
+
+	--primary-color: #0e1c41;		/*メインカラー*/
+	--primary-inverse-color: #fff;	/*上のカラーの「対」として使う色*/
+	--primary-border-color: #fff;	/*枠線の色*/
+
+	--light-color: #ecedf2;			/*薄いカラー*/
+	--light-inverse-color: #333;	/*上のカラーの「対」として使う色*/
+	--light-border-color: #333;		/*枠線の色*/
+
+	--accent-color: #d44101;		/*アクセントカラー*/
+	--accent-inverse-color: #fff;	/*上のカラーの「対」として使う色*/
+	--accent-border-color: #fff;	/*枠線の色*/
+
+	--content-space-l: 5vw;		/*左右の余白の一括管理用。画面幅100% = 100vwです。*/
+	--content-space-v: 4vw;		/*セクションの上下の余白。0にはせず、--content-space-l より小さい値にしてください。上下のセクションが隣り合うと、2つ分の余白になります。*/
+	--content-space-s: 2rem;  /*余白の一括管理用。2文字分。*/
+
+	--base-font: "Noto Sans JP", "Hiragino Kaku Gothic Pro", "ヒラギノ角ゴ Pro W3", Meiryo, "メイリオ", "Osaka", "MS PGothic", "ＭＳ Ｐゴシック", sans-serif;  /*フォント指定*/
+	--accent-font: "Jost";  /*アクセント用英語フォント指定*/
+
+}
+
+	/*画面幅500px以下の追加指定*/
+	@media (max-width:500px) {
+
+	:root {
+		--content-space-l: 10px;	/*余白の一括管理用。小さな端末で余白を狭くする。*/
+	}
+
+	}/*追加指定ここまで*/

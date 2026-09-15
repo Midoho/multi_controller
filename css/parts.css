@@ -1,0 +1,138 @@
+@charset "utf-8";
+
+/* ================================================================
+   以下、Builder で選択したパーツのCSS（自動連結）
+   ================================================================ */
+
+/* ---- 3色グラデーション背景（bg3） (bg3) ---- */
+/*bg3-parts
+---------------------------------------------------------------------------*/
+.bg3-parts {
+	background: linear-gradient(45deg, #5214cf, #1487cf, #14cf6c);	/*背景グラデーション。45度の角度。「#5214cf」→「#1487cf」→「#14cf6c」になる。*/
+	color: #fff;		/*文字色*/
+}
+
+/*bg-parts（bg3-partsとセットで使います）
+---------------------------------------------------------------------------*/
+.bg-parts {
+	padding-top: var(--content-space-v, var(--content-space-l));		/*ボックス内の上に空ける余白。theme.cssのcontent-space-vを読み込みます。*/
+	padding-bottom: var(--content-space-v, var(--content-space-l));	/*ボックス内の下に空ける余白。theme.cssのcontent-space-vを読み込みます。*/
+}
+
+/* ---- コース一覧用（list-cource1） (list-cource1) ---- */
+/*コース紹介
+---------------------------------------------------------------------------*/
+.list-cource1-parts * {margin: 0;padding: 0;}
+
+/*ボックス全体*/
+.list-cource1-parts {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));	/*ボックス１個あたりの最低幅が280pxで自動改行*/
+	gap: 2rem;		/*ボックス同士の余白。2文字分。*/
+	font-size: 0.9rem;	/*文字サイズ90%*/
+}
+
+/*メニューボックス１個あたり*/
+.list-cource1-parts .list-parts {
+	display: flex;
+	flex-direction: column;
+	background: var(--bg-color);	/*背景色。theme.cssのbg-colorを読み込みます。*/
+	border: 1px solid var(--bg-border-color);	/*枠線。色はtheme.cssのbg-border-colorを読み込みます。*/
+	border-radius: 12px;	/*角を丸くする。大きめの丸みでやわらかい印象に。*/
+	overflow: hidden;	/*角丸からはみ出た画像を隠す*/
+}
+
+/*bg1-light-parts上の線色*/
+.bg1-light-parts .list-cource1-parts .list-parts {
+	border-color: var(--light-border-color);
+}
+/*bg1-parts上の線色*/
+.bg1-parts .list-cource1-parts .list-parts {
+	border-color: var(--bg-inverse-border-color);
+}
+/*bg1-primary-parts上の線色*/
+.bg1-primary-parts .list-cource1-parts .list-parts {
+	border-color: var(--primary-border-color);
+}
+/*bg1-accent-parts上の線色*/
+.bg1-accent-parts .list-cource1-parts .list-parts {
+	border-color: var(--accent-border-color);
+}
+
+/*メニュー画像*/
+.list-cource1-parts .list-parts figure {
+	overflow: hidden;
+}
+.list-cource1-parts .list-parts figure img {
+	width: 100%;
+	aspect-ratio: 3 / 5;	/*横3:縦2の比率*/
+	object-fit: cover;		/*コンテナいっぱいにカバー、余分な部分はカット*/
+	display: block;
+}
+
+/*テキストエリア（画像の下の部分）*/
+.list-cource1-parts .list-parts .text-parts {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;	/*テキスト要素同士の余白。0.5文字分。*/
+	padding: 1.2rem 1.5rem;	/*テキストエリア内の余白。上下に1.2文字分、左右に1.5文字分。*/
+	flex: 1;
+}
+
+/*メニュー名（h4）*/
+.list-cource1-parts .list-parts h4 {
+	font-size: 1.4rem;	/*文字サイズ1.1倍*/
+	line-height: 1.5;	/*行間*/
+}
+
+/*施術時間・補足*/
+.list-cource1-parts .list-parts .info-parts {
+	font-size: 0.8rem;	/*文字サイズ80%*/
+	opacity: 0.65;	/*透明度。色が65%出た状態。*/
+}
+
+/*説明テキスト*/
+.list-cource1-parts .list-parts p {
+	font-size: 0.85rem;	/*文字サイズ85%*/
+	line-height: 1.8;	/*行間*/
+}
+
+/*価格*/
+.list-cource1-parts .list-parts .price-parts {
+	margin-top: auto;	/*ボックス下部に押し下げる*/
+	padding-top: 0.8rem;	/*上に空けるスペース。0.8文字分。区切り線との距離。*/
+	border-top: 1px solid var(--bg-border-color);	/*区切り線。色はtheme.cssのbg-border-colorを読み込みます。*/
+	text-align: right;	/*テキストを右揃え*/
+}
+.list-cource1-parts .list-parts .price-parts span {
+	font-family: var(--accent-font), var(--base-font);	/*theme.cssのaccent-fontに指定したフォントを読み込む。読み込めなければbase-fontで指定したフォントを読み込む。*/
+	font-size: 1.6rem;	/*文字サイズ1.6倍*/
+	font-weight: bold;	/*太字*/
+	color: var(--primary-color);	/*文字色。theme.cssのprimary-colorを読み込みます。*/
+	letter-spacing: -0.02em;	/*文字間隔を少し詰める*/
+}
+
+	/*画面幅600px以下の追加指定*/
+	@media (max-width:600px) {
+
+	/*ボックス全体を1列に*/
+	.list-cource1-parts {
+		grid-template-columns: 1fr;
+	}
+
+	/*メニューボックスを横並びに変更*/
+	.list-cource1-parts .list-parts {
+		flex-direction: row;	/*横並びに*/
+	}
+
+	/*メニュー画像（左側に配置）*/
+	.list-cource1-parts .list-parts figure {
+		width: 40%;		/*画像エリアの幅。ボックス全体の40%。*/
+		flex-shrink: 0;	/*画像が縮まないようにする*/
+	}
+	.list-cource1-parts .list-parts figure img {
+		aspect-ratio: auto;
+		height: 100%;	/*縦いっぱいに表示*/
+	}
+
+	}/*追加指定ここまで*/

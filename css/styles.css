@@ -1,0 +1,570 @@
+@charset "utf-8";
+
+
+/*cssファイルの読み込み
+---------------------------------------------------------------------------*/
+@import url("theme.css");
+@import url("parts.css");
+@import url("inview.css");
+
+
+/*animation11のキーフレーム設定（汎用的）
+---------------------------------------------------------------------------*/
+@keyframes animation1 {
+	0% {right: -200px;}
+	100% {right: 0px;}
+}
+
+
+/*opa1のキーフレーム設定（汎用的）
+---------------------------------------------------------------------------*/
+@keyframes opa1 {
+	0% {opacity: 0;}
+	100% {opacity: 1;}
+}
+
+
+/*全体の設定
+---------------------------------------------------------------------------*/
+body * {box-sizing: border-box;}
+html {
+	font-size: clamp(12px, 0.585vw + 9.80px, 18px);	/*画面幅375px〜1400pxの間で、12px〜18pxに可変。下でrem管理しているものも連動します。*/
+	overflow-x: visible;
+}
+body {
+	margin: 0;padding:0;
+	font-family: var(--base-font);	/*フォント指定。theme.cssのbase-fontを読み込みます。*/
+	-webkit-text-size-adjust: none;
+	background: var(--bg-color);	/*背景色。theme.cssのbg-colorを読み込みます。*/
+	color: var(--bg-inverse-color);	/*文字色。theme.cssのbg-inverse-colorを読み込みます。*/
+	line-height: 2;		/*行間*/
+	overflow-x: hidden;
+}
+
+/*リセット*/
+figure {margin: 0;}
+dd {margin: 0;}
+nav,ul,li,ol {margin: 0;padding: 0;}
+nav ul {list-style: none;}
+
+/*table全般の設定*/
+table {border-collapse:collapse;}
+
+/*画像全般の設定*/
+img {border: none;max-width: 100%;height: auto;vertical-align: middle;}
+
+/*videoタグ*/
+video {max-width: 100%;}
+
+/*iframeタグ*/
+iframe {width: 100%;}
+
+/*他*/
+input {font-size: 1rem;}
+
+
+/*section
+---------------------------------------------------------------------------*/
+section {
+	padding: var(--content-space-v, var(--content-space-l)) var(--content-space-l);	/*上下、左右へのsection内の余白。theme.cssのcontent-space-vとcontent-space-lを読み込みます。上下のセクションが隣り合うと、2つ分の余白になります。*/
+}
+
+/*section内の最初と最後の要素のマージンはリセット（余白はsectionのpaddingで管理する為）*/
+section > :first-child {margin-top: 0;}
+section > :last-child {margin-bottom: 0;}
+
+/*見出しの上のマージンもリセット（同上。ブロックの中に入っていてもsectionの余白が変わらないようにする為）*/
+main h2 {margin-top: 0;}
+
+/*section間の余白を消したい場合用。1つ目のsectionにだけclass="mb0"を追加する。*/
+section.mb0:not(.bg-parts) {padding-bottom: 0;}
+section.mb0 + section:not(.bg-parts) {padding-top: 0;}
+
+
+/*リンクテキスト全般の設定
+---------------------------------------------------------------------------*/
+a {
+	color: inherit;
+	transition: 0.3s;	/*hoverまでにかける時間。0.3秒。*/
+}
+
+/*マウスオン時*/
+a:hover {
+	filter: brightness(1.1);	/*少しだけ明るくする*/
+	text-decoration: none;
+}
+
+
+/*コンテナー（サイト全体を囲むブロック）
+---------------------------------------------------------------------------*/
+#container {
+	animation: opa1 0.2s 0.2s both;  /*0.2(2つ目の数字)秒待機後、0.2(1つ目の数字)秒かけてフェードイン*/
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+
+
+/*contents
+---------------------------------------------------------------------------*/
+#contents {
+	flex: 1;
+	min-height: 0;
+}
+
+
+/*main
+---------------------------------------------------------------------------*/
+main {
+	container-type: inline-size;
+}
+
+/*main内で使用するul,ol要素（リストタグ）*/
+main ul,main ol {
+	margin-left: 2rem;
+	margin-right: 2rem;
+}
+
+
+/*メニューオーバーレイ（メニュー領域外クリックで閉じる用）
+---------------------------------------------------------------------------*/
+#menubar-overlay {
+	display: none;
+	position: fixed;
+	z-index: 99;	/*#menubar(100)の下、ページの上*/
+	top: 0;left: 0;
+	width: 100%;height: 100%;
+	background: rgba(0,0,0,0.3);	/*半透明の黒。お好みで濃さを調整。*/
+}
+
+/*noscroll（メニュー表示中のスクロール禁止用）*/
+body.noscroll {
+	overflow: hidden;
+}
+
+
+/*header（ロゴが入った最上段のブロック）
+---------------------------------------------------------------------------*/
+/*ヘッダーブロック*/
+header {
+	padding: 1rem 80px 1rem var(--content-space-l);	/*上に1文字分、右に80px、下に1文字分、左にtheme.cssのcontent-space-lを読み込みます。*/
+    display: flex;	/*中身を横並びに*/
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;	/*中のコンテンツ同士に空けるマージン的な余白。2文字分。*/
+}
+
+/*ロゴ画像*/
+#logo {margin: 0;flex-shrink: 0;}
+#logo img {
+	display: block;
+	width: 200px;	/*ロゴの幅*/
+}
+
+/*トップページのロゴ*/
+.home #logo img {
+	width: 10vw;	/*ロゴの幅。画面の30%。*/
+}
+
+	/*画面幅700px以下の追加指定*/
+	@media (max-width:700px) {
+
+	/*トップページのロゴ*/
+	.home #logo img {
+		width: 180px;	/*ロゴの幅*/
+	}
+
+	}/*追加指定ここまで*/
+
+
+/*ヘッダーの右側ブロック（電話番号など）*/
+#header-box {
+	font-size: 0.8rem;	/*文字サイズ80%*/
+}
+
+	/*画面幅600px以下の追加指定*/
+	@media (max-width:600px) {
+
+	/*ヘッダーの右側ブロック（電話番号など）*/
+	#header-box {
+		display: none;	/*画面が狭くなるので非表示にする*/
+	}
+
+	}/*追加指定ここまで*/
+
+
+/*小さな端末で見たメニュー（開閉メニュー）
+---------------------------------------------------------------------------*/
+/*メニューブロック共通*/
+.small-screen #menubar {
+	text-shadow: none;
+	animation: animation1 0.2s both;
+	position: fixed;overflow: auto;z-index: 100;
+	right: 0px;top: 0px;
+	width: 50%;
+	height: 100%;
+	padding: 100px var(--content-space-l) 50px;	/*上下に100px、左右にtheme.cssのcontent-space-lで指定しているサイズ、下に50pxの余白*/
+	background: var(--primary-color);			/*背景色。theme.cssのprimary-colorを読み込みます。*/
+	color: var(--primary-inverse-color);		/*文字色。theme.cssのprimary-inverse-colorを読み込みます。*/
+}
+
+.small-screen #menubar {display: none;}
+
+	/*画面幅800px以下の追加指定*/
+	@media (max-width:800px) {
+
+	.small-screen #menubar {
+		width: 100%;		/*ブロックの幅*/
+	}
+
+	}/*追加指定ここまで*/
+
+
+/*メニュー１個あたり*/
+.small-screen #menubar a {
+	display: block;text-decoration: none;
+	color: inherit;
+	border: 1px solid var(--primary-inverse-color);	/*枠線の幅、線種、var以降は色の指定でtheme.cssのprimary-inverse-colorを読み込みます。。*/
+	margin-bottom: 1rem;	/*下に１文字分のスペースを空ける*/
+	padding: 1rem 2rem;		/*メニュー内の余白。上下に１文字分、左右に２文字分。*/
+	border-radius: 5px;		/*角を少し丸くする*/
+}
+
+/*子メニュー（ドロップダウンメニュー）*/
+.small-screen #menubar ul ul a {
+	margin-left: 2rem;	/*左に２文字分のスペースを空ける*/
+	padding: 0.5rem 1.5rem;	/*メニュー内の余白。上下に0.5文字分、左右に1.5文字分。*/
+}
+
+/*ドロップダウンのアイコン*/
+a.ddmenu::before {
+	font-family: "Font Awesome 6 Free";
+	font-weight: 900;
+	content: "\f078";		/*このアイコンを使う*/
+	margin-right: 1em;		/*アイコンとメニューテキストとの間に空けるスペース。1文字分。*/
+	font-size: 0.7em;		/*アイコンサイズ。70%*/
+	vertical-align: middle;
+	display: inline-block;
+	line-height: 1;
+}
+
+/*ドロップダウン共通（デフォルトで非表示。チラつかないよう念の為。）
+---------------------------------------------------------------------------*/
+#menubar ul ul {display: none;}
+
+
+/*３本バー（ハンバーガー）アイコン設定
+---------------------------------------------------------------------------*/
+#menubar_hdr {
+	display: none; /* デフォルトは非表示 */
+	animation: opa1 0s 0.2s both;
+	cursor: pointer;
+	position: fixed;
+	z-index: 101;
+	right: 0px;	/*右からの配置場所*/
+	top: 0px;	/*上からの配置場所*/
+	width: 70px;	/*ボタンの幅*/
+	height: 70px;	/*ボタンの高さ*/
+	background: var(--primary-color);	/*背景色。theme.cssのprimary-colorを読み込みます。*/
+	border-bottom-left-radius: 10px;	/*左下の角だけ少し丸く*/
+}
+
+/*ハンバーガーアイコンの線*/
+#menubar_hdr span {
+	display: block;
+	transition: 0.3s;
+	position: absolute;
+	left: 18px;
+	width: 35px;
+	height: 2px;		/*線の高さ*/
+	background: var(--primary-inverse-color);	/*線の色。theme.cssのprimary-inverse-colorを読み込みます。*/
+}
+
+/*バツ印が出ている時のボタン色*/
+#menubar_hdr.ham {
+	background: #ff0000;	/*背景色*/
+}
+#menubar_hdr.ham span {
+	background: #fff;	/*線の色*/
+}
+
+/*以下変更不要*/
+#menubar_hdr span:nth-of-type(1) {
+	top: 24px;
+}
+#menubar_hdr span:nth-of-type(2) {
+	top: 34px;
+}
+#menubar_hdr span:nth-of-type(3) {
+	top: 44px;
+}
+#menubar_hdr.ham span:nth-of-type(1) {
+	transform: translateY(10px) rotate(-45deg);
+}
+#menubar_hdr.ham span:nth-of-type(2) {
+	opacity: 0;
+}
+#menubar_hdr.ham span:nth-of-type(3) {
+	transform: translateY(-10px) rotate(45deg);
+}
+
+/*小さな画面での設定*/
+.small-screen #menubar_hdr {
+	display: flex;
+}
+
+
+/*著作部分（※意図的に見えなくしたりしないで下さい。規約違反になります。）
+---------------------------------------------------------------------------*/
+.pr a {
+	text-decoration: none;display: block;
+	background: rgba(0,0,0,0.5);
+	color: #ccc;
+	text-align: right;
+	padding: 0.5rem 1rem;
+	font-size: 0.8rem;
+}
+.pr a::before {
+	font-family: "Font Awesome 6 Free";
+	content: "\e2ca";
+	font-weight: 900;
+	margin-right: 0.5em;
+}
+
+
+/*PAGE TOP（↑）設定
+---------------------------------------------------------------------------*/
+.pagetop-show {display: block;}
+
+/*ボタンの設定*/
+.pagetop a {
+	display: block;text-decoration: none;text-align: center;z-index: 99;
+	animation: opa1 1s 0.4s both;
+	position: fixed;	/*スクロールに追従しない(固定で表示)為の設定*/
+	right: 20px;		/*右からの配置場所指定*/
+	bottom: 20px;		/*下からの配置場所指定*/
+	color: #fff;		/*文字色*/
+	font-size: 1.5rem;	/*文字サイズ*/
+	background: rgba(0,0,0,0.2);	/*背景色。0,0,0は黒の事で0.2は色が20%出た状態。*/
+	width: 60px;		/*幅*/
+	line-height: 60px;	/*高さ*/
+	border-radius: 50%;	/*円形にする*/
+}
+
+
+/*bg1-parts
+---------------------------------------------------------------------------*/
+.bg1-parts {
+	background-color: var(--bg-inverse-color);	/*背景色。theme.cssのbg-inverse-colorを読み込みます。*/
+	color: var(--bg-color);		/*文字色。theme.cssのbg-colorを読み込みます。*/
+}
+
+/*bg1-primary
+---------------------------------------------------------------------------*/
+.bg1-primary-parts {
+	background-color: var(--primary-color);		/*背景色。theme.cssのprimary-colorを読み込みます。*/
+	color: var(--primary-inverse-color);	/*文字色。theme.cssのprimary-inverse-colorを読み込みます。*/
+}
+
+
+/*bg1-light
+---------------------------------------------------------------------------*/
+.bg1-light-parts {
+	background-color: var(--light-color);		/*背景色。theme.cssのlight-colorを読み込みます。*/
+	color: var(--light-inverse-color);	/*背景色。theme.cssのlight-inverse-colorを読み込みます。*/
+}
+
+
+/*bg1-accent
+---------------------------------------------------------------------------*/
+.bg1-accent-parts {
+	background-color: var(--accent-color);		/*背景色。theme.cssのaccent-colorを読み込みます。*/
+	color: var(--accent-inverse-color);	/*背景色。theme.cssのaccent-inverse-colorを読み込みます。*/
+}
+
+
+/*bg-parts（bg1-primary-parts、bg1-light-parts、bg1-accent-partsとセットで使います）
+---------------------------------------------------------------------------*/
+.bg-parts {
+	padding-top: var(--content-space-v, var(--content-space-l));		/*ボックス内の上に空ける余白。theme.cssのcontent-space-vを読み込みます。*/
+	padding-bottom: var(--content-space-v, var(--content-space-l));	/*ボックス内の下に空ける余白。theme.cssのcontent-space-vを読み込みます。*/
+}
+
+
+/*section内で画面両サイドいっぱいまで広げる場合（marginのみでもいいが安定版に）
+---------------------------------------------------------------------------*/
+.bleed-x-parts {
+	--bleed-x: var(--content-space-l);	/*エイリアスに*/
+	width: calc(100% + (var(--bleed-x) * 2));	/*section内容の幅＋両サイドpadding（対象要素の幅）*/
+	margin-left: calc(var(--bleed-x) * -1);
+	margin-right: calc(var(--bleed-x) * -1);
+	max-width: none;
+}
+
+
+/*左右によせる専用
+---------------------------------------------------------------------------*/
+.bleed-left-parts {
+	width: calc(100% + var(--content-space-l));
+	margin-left: calc(-1 * var(--content-space-l));
+}
+.bleed-right-parts {
+	width: calc(100% + var(--content-space-l));
+	margin-right: calc(-1 * var(--content-space-l));
+}
+
+
+/*その他
+---------------------------------------------------------------------------*/
+.color-check, .color-check a {color: #ff0000 !important;}
+.bg1-accent-parts .color-check, .color-check a {color: #fef500 !important;}
+.l {text-align: left !important;}
+.c {text-align: center !important;}
+.r {text-align: right !important;}
+.ws {width: 100%;display: block;}
+.wl {width: 100%;display: block;}
+.padding-x {padding: 0 var(--content-space-l);}
+.mt0 {margin-top: 0px !important;}
+.mt1rem {margin-top: 1rem !important;}
+.mt3rem {margin-top: 3rem !important;}
+.mb0 {margin-bottom: 0px !important;}
+.mb1rem {margin-bottom: 1rem !important;}
+.mb3rem {margin-bottom: 3rem !important;}
+.mb30 {margin-bottom: 30px !important;}
+.look {display: inline-block;padding: 0px 10px;background: #eee;border: 1px solid #ccc; color: #888; border-radius: 3px;margin: 5px 0; word-break: break-all;}
+.small {font-size: 0.75em;}
+.large {font-size: 2em; letter-spacing: 0.1em;}
+.pc {display: none;}
+.dn {display: none !important;}
+.block {display: block !important;}
+.is-clip {overflow: hidden;}
+
+/*大きな画面の場合*/
+.large-screen .ws {width: 50%;}
+.large-screen .sh {display: none;}
+.large-screen .pc {display: block;}
+
+
+/*メイン画像
+---------------------------------------------------------------------------*/
+.mainimg * {margin: 0;padding: 0;}
+.mainimg {width: 100%;position: relative;}
+.mainimg .slide {display: block;width: 100%;height: 100%;}
+.mainimg video {width: 100%;height: 100%;object-fit: cover;object-position: center;display: block;}
+
+/*テキストと画像全体を囲むブロック*/
+.mainimg-container {
+	margin-inline: var(--content-space-l);	/*ブロックの左右にスペースを空ける。theme.cssのcontent-space-lを読み込みます。*/
+	position: relative;
+}
+
+
+/*メイン画像*/
+.mainimg {
+	border-radius: 5px;	/*角を少しだけ丸くする*/
+	overflow: hidden;
+	aspect-ratio: 1;	/*正方形にする。画像の比率そのままがよければこの１行を削除。*/
+}
+
+	/*画面幅700px以上の追加指定*/
+	@media (min-width:700px) {
+
+	/*メイン画像*/
+	.mainimg {
+		margin-left: auto;	/*右によせる*/
+		width: 50%;			/*画像の幅50%。お好みで。*/
+	}
+
+	}/*追加指定ここまで*/
+
+
+	/*画面幅700px以上の追加指定*/
+	@media (min-width:700px) {
+
+	/*テキストブロック*/
+	.mainimg-container .text {
+		position: absolute;
+		z-index: 1;
+		top: 50%;
+		left: 0px;
+		transform: translateY(-50%);
+		width: 60%;	/*幅。お好みで。大きくするほど画像と重なります。*/
+	}
+
+	}/*追加指定ここまで*/
+
+
+/*h2見出し*/
+.mainimg-container h2 {
+	font-family: var(--accent-font), var(--base-font);	/*theme.cssのaccent-fontに指定したフォントを読み込む。読み込めなければbase-fontで指定したフォントを読み込む。*/
+	font-weight: 700;	/*文字の太さ。100〜900で指定可能。*/
+	background: var(--primary-color);	/*背景色。theme.cssのprimary-colorを読み込みます。*/
+	border-radius: 5px;	/*角を少しだけ丸くする*/
+	color: var(--primary-inverse-color);	/*文字色。theme.cssのprimary-inverse-colorを読み込みます。*/
+	font-size: 5vw;	/*文字サイズ。画面幅100% = 100vwです。*/
+	letter-spacing: 0.1em;	/*文字間隔を少し広く*/
+	margin-left: -0.1em;	/*上の数字にマイナスをつける*/
+	padding: 0.5rem 1rem;
+	line-height: 1;
+	width: fit-content;
+	box-shadow: 0.5rem 0.5rem rgba(0,0,0,0.1);	/*ボックスの影。右へ0.5文字分、下へ0.5文字分、0,0,0は黒の事で0.1は色が10%出た状態。*/
+	margin-inline: auto;
+}
+
+	/*画面幅700px以上の追加指定*/
+	@media (min-width:700px) {
+
+	/*h2見出し*/
+	.mainimg-container h2 {
+		margin-inline: 0;
+	}
+
+	}/*追加指定ここまで*/
+
+/*文章に白いフチをつける*/
+.mainimg-container p:not(.btn) {
+	-webkit-text-stroke: 5px #fff;	/*5pxがフチの太さ。お好みで。*/
+	paint-order: stroke fill;
+	font-weight: bold;	/*太字に*/
+}
+
+/*ボタン*/
+.mainimg-container .btn {
+    display: flex;
+    flex-direction: column;	/*縦積み*/
+    gap: 1rem;			/*ボタン同士の間に空けるスペース。１文字分。*/
+	font-size: 1.1rem;	/*文字サイズ。1.5倍。*/
+	margin-top: 1rem;	/*上に空けるスペース。１文字分。*/
+	text-align: center;	/*文字をセンタリング*/
+}
+
+	/*画面幅700px以上の追加指定*/
+	@media (min-width:700px) {
+
+	/*ボタン*/
+	.mainimg-container .btn {
+		flex-direction: row;	/*ボタンを横並びにする*/
+	}
+
+	}/*追加指定ここまで*/
+
+
+.mainimg-container .btn a {
+	display: block;text-decoration: none;
+	background: var(--accent-color);	/*ボタンの背景色。theme.cssのaccent-colorを読み込みます。*/
+	color: var(--accent-inverse-color);	/*ボタンの文字色。theme.cssのaccent-inverse-colorを読み込みます。*/
+	padding: 0.5rem 1rem;	/*ボタン内の余白。上下に0.5文字分、左右に1文字分。*/
+	border-radius: 5px;	/*角を少しだけ丸くする*/
+	flex: 1;
+}
+
+/*マウスオン時に押した感じにする*/
+.mainimg-container .btn a:hover {
+	position: relative;
+	bottom: -1px;
+	box-shadow: none;
+}
+
+
+/*omake
+---------------------------------------------------------------------------*/
