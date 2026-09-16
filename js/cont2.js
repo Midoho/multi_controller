@@ -392,3 +392,4 @@
       canvas.style.cursor = 'default';
       await sendCommandMotor(motorVal1, motorVal2); 
     }
+});
