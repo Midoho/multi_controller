@@ -49,25 +49,33 @@
         </div>
         
         <!-- ここがCodeMirrorの対象になる -->
-        <textarea id="ikScript">// 変数定義
-
-
-
+        <textarea id="ikScript">
+// 変数定義
+let theta1;
+let theta2;
+let cmd1;
+let cmd2;
 
 // 1. エルボー関節 (θ2) の計算
-
+theta2 = 
 
 
 // 2. ベース関節 (θ1) の計算
-
+theta1 =
 
 
 // 3. モータへの指令値 (0〜4095) の計算
+cmd1 = 
+cmd2 = 
 
 
-
-// 計算結果を返す
-
+// 計算結果をプログラムへ渡す
+return {
+  theta1: theta1,
+  theta2: theta2,
+  val1: cmd1,
+  val2: cmd2
+};
 
 
 </textarea>
