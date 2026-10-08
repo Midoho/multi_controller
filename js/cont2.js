@@ -158,56 +158,42 @@
   updateViewFK();
 
   function calculateIK(x, y) {
-    if (activeIkMode === 'teacher') {
-      let cosT2 = (x*x + y*y - L1*L1 - L2*L2) / (2 * L1 * L2);
-      cosT2 = Math.max(-1, Math.min(1, cosT2));
-      let th2_rad = Math.acos(cosT2);
-      let th1_rad = Math.atan2(y, x) - Math.atan2(L2 * Math.sin(th2_rad), L1 + L2 * cosT2);
+    let scriptStr = savedIkScript; // 記入された文字を読み取る（文字列として代入されている）
+    
+    // function Sin(deg) { return Math.sin(deg * D2R); } と const Sin = (deg) => Math.sin(deg * D2R); は同意
+    const mathHelper = `
+      const D2R = Math.PI / 180.0;
+      const R2D = 180.0 / Math.PI;
+      const Sin = (deg) => Math.sin(deg * D2R);
+      const Cos = (deg) => Math.cos(deg * D2R);
+      const Acos = (val) => Math.acos(val) * R2D;
+      const Atan = (y, x) => Math.atan2(y, x) * R2D;
+      const Sqrt = Math.sqrt;
+    `;
+    
+    try {
+      let calcFunc = new Function('X', 'Y', 'L1', 'L2', mathHelper + scriptStr); // 与えられた文字列から新しい関数をコンパイルする
+      let res = calcFunc(x, y, L1, L2);
       
-      let t1 = th1_rad * 180.0 / Math.PI - 90;
-      let t2 = th2_rad * 180.0 / Math.PI;
+      if (!res || typeof res.theta1 === 'undefined' || typeof res.theta2 === 'undefined') {
+        throw new Error("フォーマット不正");
+      }
+      if (isNaN(res.theta1) || isNaN(res.theta2)) {
+        throw new Error("NaN発生");
+      }
+      if (res.theta1 < -90) {
+        res.theta1 = -90;
+        res.val1 = 1024;  // 2048 - 1024 (左または右の限界)
+      } else if (res.theta1 > 90) {
+        res.theta1 = 90;
+        res.val1 = 3072;  // 2048 + 1024 (反対側の限界)
+      }
       
-      return {
-        theta1: t1,
-        theta2: t2,
-        val1: t1 * (4096 / 360) + 2048,
-        val2: t2 * (4096 / 360) + 2048
-      };
-    } else {
-      let scriptStr = savedIkScript; //記入された文字を読み取る（文字列として代入されている）
-      //function Sin(deg) {  return Math.sin(deg * D2R);}とconst Sin = (deg) => Math.sin(deg * D2R);は同意
-      const mathHelper = `
-        const D2R = Math.PI / 180.0;
-        const R2D = 180.0 / Math.PI;
-        const Sin = (deg) => Math.sin(deg * D2R);
-        const Cos = (deg) => Math.cos(deg * D2R);
-        const Acos = (val) => Math.acos(val) * R2D;
-        const Atan = (y, x) => Math.atan2(y, x) * R2D;
-        const Sqrt = Math.sqrt;
-      `;
-      try {
-        let calcFunc = new Function('X', 'Y', 'L1', 'L2', mathHelper + scriptStr);//与えられた文字列から新しい関数をコンパイルする
-        let res = calcFunc(x, y, L1, L2);
-        
-        if (!res || typeof res.theta1 === 'undefined' || typeof res.theta2 === 'undefined') {
-          throw new Error("フォーマット不正");
-        }
-        if (isNaN(res.theta1) || isNaN(res.theta2)) {
-          throw new Error("NaN発生");
-        }
-        if (res.theta1 < -90) {
-          res.theta1 = -90;
-          res.val1 = 1024;  // 2048 - 1024 (左または右の限界)
-        } else if (res.theta1 > 90) {
-          res.theta1 = 90;
-          res.val1 = 3072;  // 2048 + 1024 (反対側の限界)
-      }
-        return { theta1: res.theta1, theta2: res.theta2, val1: res.val1, val2: res.val2 };
-        
-      } catch (e) {
-        console.warn("自分で入力した式の実行エラー:", e.message);
-        return { theta1: angle1_deg, theta2: angle2_deg, val1: motorVal1, val2: motorVal2 }; 
-      }
+      return { theta1: res.theta1, theta2: res.theta2, val1: res.val1, val2: res.val2 };
+      
+    } catch (e) {
+      console.warn("自分で入力した式の実行エラー:", e.message);
+      return { theta1: angle1_deg, theta2: angle2_deg, val1: motorVal1, val2: motorVal2 }; 
     }
   }
 
@@ -256,7 +242,7 @@
     let l1_val = parseFloat(document.getElementById('ikTargetL1').value);
     let l2_val = parseFloat(document.getElementById('ikTargetL2').value);
     
-    // ★修正: textareaの値ではなく、editor.getValue()から取得
+    // editor.getValue()から取得
     let scriptStr = editor.getValue();
     let resultArea = document.getElementById('ikResultArea');
 

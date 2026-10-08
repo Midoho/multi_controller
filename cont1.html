@@ -29,26 +29,25 @@
       
       <div class="formula-help">
         <p style="margin:0 0 5px 0;"><strong>📝 ミッション:</strong><br>
-          変数 <code>val1</code> と <code>val2</code> にモータの生の値（RAW値: 0〜4095）を代入して、ロボットアームを動かしてみよう。<br>
+          変数 <code>val1</code> に制御値（RAW値: 0〜4095）を代入して、モータを動かしてみよう。<br>
           ※2048がモータの中心位置です。
         </p>
       </div>
 
-      <!-- 元のtextarea（CodeMirrorによって自動的に高機能エディタに置き換わります） -->
       <textarea id="rawScript">
 // 変数定義
-let val1;
-let val2;
+
+
 
 // 目標とするRAW値を代入（0〜4095）
-val1 = 2048;
-val2 = 2048;
+
+
 
 // 実行結果としてRAW値を返す
-return {
-  val1: val1,
-  val2: val2
-};</textarea>
+
+
+
+</textarea>
     </div>
 
     <button id="runBtn" style="padding: 12px; background:#E91E63; color:white; border:none; border-radius:5px; cursor:pointer; width: 100%; font-size: 16px; font-weight: bold;">

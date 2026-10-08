@@ -1,1 +1,103 @@
 <!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>倒立振子 Web Controller</title>
+  <link rel ="icon" type="image/png" href="img/favicon.ico"> 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="css/style3.css">
+</head>
+<body spellcheck="false">
+
+  <div class="top-container">
+    <div class="controls-panel">
+      <h2 style="margin: 0 0 10px 0; font-size: 1.3em;">倒立振子コントローラー</h2>
+      
+      <button id="connectBtn" class="btn-connect">シリアル接続</button>
+      <div style="text-align: center; margin-bottom: 10px;">
+        接続状況: <span id="statusText" style="font-weight:bold; color: #dc3545;">未接続</span>
+      </div>
+      
+      <hr style="width: 100%; border: 0; border-top: 1px solid #ddd;">
+      
+      <p style="color: #555; font-size: 0.9em; line-height: 1.5;">
+        ロボットの動きを確認しながらゲインを調整してみましょう．<br>
+        スライダーを移動させ，「マイコンに送信」ボタンを押すことでゲインを動的に変更します．
+      </p>
+    </div>
+
+    <div class="chart-panel">
+      <div class="chart-header">
+        <h3>振子角度・誤差モニタリング</h3>
+        <div class="stats-box">
+          平均: <span id="meanVal">0.000</span> | 
+          平均二乗誤差: <span id="varVal" style="color: #28a745;">0.000</span>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-container">
+    <div class="mode-panel">
+      <h3>姿勢制御ゲイン <span>倒れないように踏ん張る力</span></h3>
+      
+      <div class="slider-row">
+        <label>P</label>
+        <input type="range" id="inner_kp" min="0" max="260" step="1" value="0" oninput="updateVal('inner_kp')">
+        <span id="val_inner_kp" class="val-display">0</span>
+      </div>
+      <div class="slider-row">
+        <label>I</label>
+        <input type="range" id="inner_ki" min="0" max="260" step="1" value="0" oninput="updateVal('inner_ki')">
+        <span id="val_inner_ki" class="val-display">0</span>
+      </div>
+      <div class="slider-row">
+        <label>D</label>
+        <input type="range" id="inner_kd" min="0" max="260" step="1" value="0" oninput="updateVal('inner_kd')">
+        <span id="val_inner_kd" class="val-display">0</span>
+      </div>
+
+      <div class="btn-send-wrapper">
+        <button class="btn-send" onclick="sendPID('I')">マイコンに送信 </button>
+        <button class="btn-send" style="background-color: rgb(242, 60, 47); margin-top: 10px;" onclick="resetPID('I')">HELP</button>
+      </div>
+    </div>
+
+    <div class="mode-panel outer-panel">
+      <h3>位置制御ゲイン <span>元の場所に戻る力</span></h3>
+      
+      <div class="slider-row">
+        <label>P</label>
+        <input type="range" id="outer_kp" min="0" max="0.004" step="0.000001" value="0" oninput="updateVal('outer_kp')">
+        <span id="val_outer_kp" class="val-display">0</span>
+      </div>
+      <div class="slider-row">
+        <label>I</label>
+        <input type="range" id="outer_ki" min="0" max="0.004" step="0.000001" value="0" oninput="updateVal('outer_ki')">
+        <span id="val_outer_ki" class="val-display">0</span>
+      </div>
+      <div class="slider-row">
+        <label>D</label>
+        <input type="range" id="outer_kd" min="0" max="0.004" step="0.000001" value="0" oninput="updateVal('outer_kd')">
+        <span id="val_outer_kd" class="val-display">0</span>
+      </div>
+
+      <div class="btn-send-wrapper">
+        <button class="btn-send outer-btn" onclick="sendPID('O')">マイコンに送信</button>
+        <button class="btn-send outer-btn" style="background-color: rgb(242, 60, 47); margin-top: 10px;" onclick="resetPID('O')">HELP</button>
+      </div>
+    </div>
+  </div>
+  
+<div id="footer">
+  <a href="index.html" class="home-button">
+    <img src="img/gohome.jpg" alt="Home" class="home-logo">
+  </a>
+</div>
+  
+  <script src="js/cont3.js"></script>
+</body>
+</html>

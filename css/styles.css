@@ -565,6 +565,12 @@ a.ddmenu::before {
 	box-shadow: none;
 }
 
+.list-parts-link {
+  text-decoration: none; /* 下線を消す */
+  color: inherit;        /* 文字色が青や紫に変わるのを防ぐ（親要素の色を引き継ぐ） */
+}
+
+
 
 /*omake
 ---------------------------------------------------------------------------*/

@@ -57,7 +57,7 @@
   }
 
   document.getElementById('runBtn').addEventListener('click', async () => {
-    // 変更点: textareaの値ではなく、CodeMirrorエディタから直接コードを取得する
+    // CodeMirrorエディタから直接コードを取得する
     let scriptStr = editor.getValue();
     let resultArea = document.getElementById('resultArea');
 
@@ -65,21 +65,29 @@
       let calcFunc = new Function(scriptStr);
       let res = calcFunc();
 
-      if (!res || typeof res.val1 === 'undefined' || typeof res.val2 === 'undefined') {
+      // 戻り値自体がない（return忘れなど）場合はエラー
+      if (!res || typeof res !== 'object') {
         throw new Error("return { val1: ..., val2: ... }; の形式で値を返してください。");
       }
-      if(isNaN(res.val1) || isNaN(res.val2)) {
+
+      // どちらも入力されていない場合はエラー
+      if (typeof res.val1 === 'undefined' && typeof res.val2 === 'undefined') {
+        throw new Error("val1 または val2 の少なくとも一つは指定してください。");
+      }
+
+      // 省略された場合は、とりあえず 2048 を自動で代入する
+      if (typeof res.val1 === 'undefined') res.val1 = 2048;
+      if (typeof res.val2 === 'undefined') res.val2 = 2048;
+
+      if (isNaN(res.val1) || isNaN(res.val2)) {
         throw new Error("RAW値に数値以外のものが代入されています。");
       }
 
-      let motorVal1 = Math.max(0, Math.min(4095, Math.round(res.val1)));
-      let motorVal2 = Math.max(0, Math.min(4095, Math.round(res.val2)));
+      let theta1 = res.val1 * (360/4096);
+      let theta2 = res.val2 * (360/4096);
 
-      let theta1 = (motorVal1 - 2048) / (4096 / 360);
-      let theta2 = (motorVal2 - 2048) / (4096 / 360);
-
-      document.getElementById('resVal1').innerText = motorVal1;
-      document.getElementById('resVal2').innerText = motorVal2;
+      document.getElementById('resVal1').innerText = res.val1;
+      document.getElementById('resVal2').innerText = res.val2;
       document.getElementById('resTh1').innerText = theta1.toFixed(1);
       document.getElementById('resTh2').innerText = theta2.toFixed(1);
       resultArea.style.display = 'block'; 
@@ -87,7 +95,7 @@
       if (!writer) {
         alert("コードの評価は成功しましたが、Arduinoが接続されていません。");
       } else {
-        await sendCommandMotor(motorVal1, motorVal2);
+        await sendCommandMotor(res.val1, res.val2);
       }
 
     } catch (e) {

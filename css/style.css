@@ -20,7 +20,7 @@ h1 {
 #main-container {
   display: flex; 
   gap: 30px; 
-  max-width: 1000px; 
+  max-width: 1500px; 
   margin: 0 auto; 
   align-items: flex-start; 
   justify-content: center; 
@@ -44,7 +44,7 @@ h1 {
 /* 右側：グラフパネル（IK Controller用。存在しない場合は無視される） */
 #graph-panel {
   flex: 1;
-  min-width: 300px;
+  min-width: 400px;
   background: #fff;
   padding: 20px;
   border-radius: 8px;
