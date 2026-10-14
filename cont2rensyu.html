@@ -40,12 +40,12 @@ let cmd1;
 let cmd2;
 
 // 1. エルボー関節 (θ2) の計算
-theta2 = -Acos((X*X + Y*Y - L1*L1 - L2*L2)/(2*L1*L2));
+theta2 = Acos((X*X + Y*Y - L1*L1 - L2*L2)/(2*L1*L2));
 
 // 2. ベース関節 (θ1) の計算
 let kaku1 = Atan(X, Y);
 let kaku2 = Acos((X*X + Y*Y + L1*L1 - L2*L2)/(2*L1*Sqrt(X*X + Y*Y)));
-theta1 = kaku2 - kaku1;
+theta1 = -kaku2 - kaku1;
 
 // 3. モータへの指令値 (0〜4095) の計算
 cmd1 = -theta1 * (4096 / 360) + 2048;
