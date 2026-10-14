@@ -254,6 +254,7 @@
         const Cos = (deg) => Math.cos(deg * D2R);
         const Acos = (val) => Math.acos(val) * R2D;
         const Atan = (y, x) => Math.atan2(y, x) * R2D;
+        const AtanY = (x, y) => Math.atan2(-x, y) * R2D;
         const Sqrt = Math.sqrt;
       `;
 

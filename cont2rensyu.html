@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>  
+<meta name="robots" content="noindex, nofollow">
+<title>2-Link Robot Controller (Editor Version)</title>
+<meta charset="utf-8" />
+<link rel ="icon" type="image/png" href="img/favicon.ico"> 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/monokai.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<h1>逆運動学シミュレータ (数式検証用)</h1>
+
+<div id="main-container">
+  <div id="control-panel">
+    <h3>数式の入力と計算</h3>
+    
+    <div class="box2">
+      <strong>目標座標 (手先の位置):</strong><br><br>
+      X: <input type="number" id="ikTargetX" value="100"> mm &nbsp;
+      Y: <input type="number" id="ikTargetY" value="150"> mm<br><br>
+      <strong>リンク長:</strong><br><br>
+      L1: <input type="number" id="ikTargetL1" value="150"> mm &nbsp;
+      L2: <input type="number" id="ikTargetL2" value="150"> mm
+    </div>
+
+    <div class="box2">
+      <div class="formula-help">
+        <p style="margin:0 0 5px 0;"><strong>利用可能な関数 (角度は度数法):</strong><br>
+          <span class="math-badge">Sin()</span> <span class="math-badge">Cos()</span> <span class="math-badge">Acos()</span> <span class="math-badge">Atan(y,x)</span> <span class="math-badge">Sqrt()</span>
+        </p>
+      </div>
+      <textarea id="ikScript">
+// 変数定義
+let theta1;
+let theta2;
+let cmd1;
+let cmd2;
+
+// 1. エルボー関節 (θ2) の計算
+theta2 = -Acos((X*X + Y*Y - L1*L1 - L2*L2)/(2*L1*L2));
+
+// 2. ベース関節 (θ1) の計算
+let kaku1 = Atan(X, Y);
+let kaku2 = Acos((X*X + Y*Y + L1*L1 - L2*L2)/(2*L1*Sqrt(X*X + Y*Y)));
+theta1 = kaku2 - kaku1;
+
+// 3. モータへの指令値 (0〜4095) の計算
+cmd1 = -theta1 * (4096 / 360) + 2048;
+cmd2 = theta2 * (4096 / 360) + 2048;
+
+return {
+  theta1: theta1,
+  theta2: theta2,
+  val1: cmd1,
+  val2: cmd2
+};
+</textarea>
+    </div>
+
+    <button id="runIkBtn">🚀 数式を評価して描画</button>
+    
+    <!-- エラー発生時に表示される領域 -->
+    <div id="errorBox"></div>
+      
+    <div id="ikResultArea" style="display: none;">
+      <h4 style="margin: 0 0 10px 0; color: #37474f; text-align: center;">📊 計算結果</h4>
+      <div class="result-box">
+        <div class="result-col">
+          <strong style="color: #555;">角度指令値</strong><br>
+          <hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">
+          θ1: <span id="resTh1" style="font-weight:bold; color:#1976D2;">0.0</span> °<br>
+          θ2: <span id="resTh2" style="font-weight:bold; color:#1976D2;">0.0</span> °
+        </div>
+        <div class="result-col">
+          <strong style="color: #555;">モータ指令値</strong><br>
+          <hr style="border: 0; border-top: 1px dashed #ccc; margin: 5px 0;">
+          Val1: <span id="resVal1" style="font-weight:bold; color:#E64A19;">2048</span><br>
+          Val2: <span id="resVal2" style="font-weight:bold; color:#E64A19;">2048</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="graph-panel">
+    <h2 style="margin-top: 0; margin-bottom: 10px;">ロボット姿勢ビューア</h2>
+    <canvas id="robotCanvas" width="500" height="500"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+
+<script src="js/cont2rensyu.js"></script>
+</body>
+</html>

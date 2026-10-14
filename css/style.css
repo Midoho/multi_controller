@@ -205,3 +205,66 @@ input[type="number"] {
 .home-button:hover {
   background-color: #1976D2;
 }
+
+/* =========================================
+   検証用シミュレータ専用スタイル
+========================================= */
+
+/* 実行ボタンのスタイル */
+#runIkBtn {
+  padding: 15px;
+  background: #E91E63;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  margin-top: 10px;
+}
+
+#runIkBtn:hover {
+  background: #d81b60; /* マウスオーバーで少し暗くする */
+}
+
+/* エラー表示エリアのスタイル（普段は非表示） */
+#errorBox {
+  display: none;
+  background: #ffebee;
+  border: 2px solid #f44336;
+  color: #c62828;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 15px;
+  font-weight: bold;
+  line-height: 1.5;
+}
+
+/* 計算結果エリアのスタイル */
+.result-box {
+  display: flex;
+  justify-content: space-between;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  margin-top: 15px;
+  border: 1px solid #dee2e6;
+}
+
+.result-col {
+  width: 45%;
+}
+
+/* 数式の関数名バッジのスタイル */
+.math-badge {
+  background: #e3f2fd;
+  color: #1565c0;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+  margin-right: 5px;
+  border: 1px solid #90caf9;
+}
