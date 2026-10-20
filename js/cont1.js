@@ -88,8 +88,8 @@
 
       document.getElementById('resVal1').innerText = res.val1;
       document.getElementById('resVal2').innerText = res.val2;
-      document.getElementById('resTh1').innerText = theta1.toFixed(1);
-      document.getElementById('resTh2').innerText = theta2.toFixed(1);
+      //ocument.getElementById('resTh1').innerText = theta1.toFixed(1);
+      //document.getElementById('resTh2').innerText = theta2.toFixed(1);
       resultArea.style.display = 'block'; 
 
       if (!writer) {
